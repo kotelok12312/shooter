@@ -5,11 +5,20 @@ font.init()
 font1 = font.Font(None, 36)
 font2 = font.Font(None, 70)
 mixer.init()
-mixer.music.load("Zombotany.mp3")
-mixer.music.play()
+menu_channel = mixer.Channel(0)
+game_channel = mixer.Channel(1)
+menu_music = mixer.Sound('space.ogg')
+game_music = mixer.Sound('Zombotany.ogg')
 window = display.set_mode((700, 500))
 display.set_caption("шутер")
-
+def show_menu():
+    global menu_channel, game_channel
+    game_channel.stop()
+    menu_channel.play(menu_music, loops =-1)
+def main():
+    global menu_channel, game_channel
+    menu_channel.stop()
+    game_channel.play(game_music, loops =-1)
 class GameSprite(sprite.Sprite):
     def __init__(self, filename, w, h, speed, x, y):
         super().__init__()
@@ -35,8 +44,8 @@ class Player(GameSprite):
             self.rect.x += self.speed
         if self.is_parrying:
             self.parry_timer -= 1
-        if self.parry_timer <= 0:
-            self.is_parrying = False
+            if self.parry_timer <= 0:
+                self.is_parrying = False
     def fire(self):
         bullet = Bullet("bullet.png", 10, 30, 20, self.rect.centerx, self.rect.top)
         bullets.add(bullet)
@@ -44,12 +53,11 @@ class Player(GameSprite):
         if not self.is_parrying:
             self.is_parrying = True
             self.parry_timer = self.parry_duration
-
-class Enemy(GameSprite):   
+class Enemy(GameSprite):  
     def __init__(self, filename, w, h, speed, x, y):
         super().__init__(filename, w, h, speed, x, y)
         self.last_shot_time = time.get_ticks()
-        self.shoot_interval = 2000  
+        self.shoot_interval = 5000  
         self.damage = 20
     def update(self):
         global lost
@@ -71,15 +79,12 @@ class Bullet(GameSprite):
         if self.rect.y <= 0:
             self.kill()
 class EnemyBullet(GameSprite):
-     def __init__(self, filename, w, h, speed, x, y):
-        super().__init__(filename, w, h, speed, x, y)
-        self.damage = 20
     def update(self):
         self.rect.y += self.speed
         if self.rect.y  >= 500:
             self.kill()
 
-player = Player("inkay.png", 80, 65, 10, 330, 440)
+player = Player("inkay.png", 80, 65, 10, 130, 440)
 enemy1 = Enemy("skorupi.png", 80, 80, randint(1, 3), randint(100, 620), 0)
 enemy2 = Enemy("skorupi.png", 80, 80, randint(1, 3), randint(100, 620), 0)
 enemy3 = Enemy("skorupi.png", 80, 80, randint(1, 3), randint(100, 620), 0)
@@ -102,8 +107,13 @@ lost = 0
 killed = 0
 text_victory = font2.render("Победа!", 1, (0, 255, 0))
 text_defeat = font2.render("Поражение", 1, (255, 0, 0))
+def pause():
+    global menu
+    menu = True
+    btn.reset
 while game:
     if menu:
+        show_menu()
         window.blit(menubackground, (0, 0))
         btn.reset()
         for e in event.get():
@@ -113,69 +123,69 @@ while game:
                 x, y = e.pos
                 if btn.rect.collidepoint(x, y):
                     menu = False
+                    main()
     if finish == False and menu == False:
-        player.life = 100
         window.blit(background, (0, 0))
         player.update()
         player.reset()
         monsters.draw(window)
         monsters.update()
-        bullets.draw(window) 
+        bullets.draw(window)
         bullets.update()
         text_lose = font1.render("Пропущено:" + str(lost), 1, (255, 0, 0))
         window.blit(text_lose, (10, 50))
         text_win = font1.render("Счёт:" + str(killed), 1, (0, 255, 0))
         window.blit(text_win, (10, 10))
         sprites_list = sprite.groupcollide(monsters, bullets, True, True)
-        sprites_list2 = sprite.spritecollide(player, monsters, False)
-        sprites_list3 = sprite.spritecollide(player, enemybullets, True, False)
+        sprites_list2 = sprite.spritecollide(player, monsters, True)
+        sprites_list3 = sprite.spritecollide(player, enemybullets, True)
         for monster in monsters:
             monster.shoot()
         enemybullets.draw(window)
         enemybullets.update()
         for monster in sprites_list:
-            killed += 1 
+            killed += 1
             enemy1 = Enemy("skorupi.png", 80, 80, randint(1, 4), randint(100, 620), 0)
             monsters.add(enemy1)
         if killed >= 25:
             finish = True
             window.blit(text_victory, (200, 200))
         for monster in sprites_list2:
-            if not player.is_parrying: 
-                player.life -= monsters.damage
-            else:
-                print("Attack parried!")
-
-            finish = True
-            window.blit(text_defeat, (200, 200))
-        if lost >= 3 or player.life <= 0:
-            finish = True
-            window.blit(text_defeat, (200, 200))
-        if lost >= 3 or player.life <= 0:
-            finish = True
-            window.blit(text_defeat, (200, 200))
-        for player in sprites_list3:
             if not player.is_parrying:
-                player.life -= monsters.damage 
+                player.life -= monster.damage
+                finish = True
+                window.blit(text_defeat, (200, 200))
+                game_channel.stop()
             else:
                 print("Attack parried!")
+        if lost >= 3 or player.life <= 0:
             finish = True
             window.blit(text_defeat, (200, 200))
+        if lost >= 3 or player.life <= 0:
+            finish = True
+            window.blit(text_defeat, (200, 200))
+        for enemybullet in sprites_list3:
+            if not player.is_parrying:
+                player.life -= 50
+                finish = True
+                window.blit(text_defeat, (200, 200))
+            else:
+                print("Attack parried!")
+        for e in event.get():
             if e.type == QUIT:
                 game = False
             if e.type == KEYDOWN:
-                if e.key== K_SPACE:
+                if e.key == K_SPACE:
                     player.fire()
                 if e.key== K_p:
                     player.parry()
+                if e.key == K_r:
+                    pause()
             if e.type == MOUSEBUTTONDOWN:
-                player.fire()
-
-                
+                player.fire()          
     if finish == True and menu == False:
         for e in event.get():
             if e.type == QUIT:
                 game = False
     display.update()
     clock.tick(FPS)
-    
