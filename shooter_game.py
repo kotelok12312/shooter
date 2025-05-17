@@ -34,7 +34,7 @@ class Player(GameSprite):
         super().__init__(filename, w, h, speed, x, y)
         self.is_parrying = False
         self.parry_duration = 30
-        self.parry_timer = 0
+        self.parry_timer = 2000
         self.life = 100
     def update(self):
         keys_pressed = key.get_pressed()
@@ -57,7 +57,7 @@ class Enemy(GameSprite):
     def __init__(self, filename, w, h, speed, x, y):
         super().__init__(filename, w, h, speed, x, y)
         self.last_shot_time = time.get_ticks()
-        self.shoot_interval = 5000  
+        self.shoot_interval = 2500  
         self.damage = 20
     def update(self):
         global lost
@@ -151,6 +151,8 @@ while game:
             finish = True
             window.blit(text_victory, (200, 200))
         for monster in sprites_list2:
+            enemy1 = Enemy("skorupi.png", 80, 80, randint(1, 4), randint(100, 620), 0)
+            monsters.add(enemy1)
             if not player.is_parrying:
                 player.life -= monster.damage
                 finish = True
