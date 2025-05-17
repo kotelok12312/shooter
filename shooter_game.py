@@ -14,7 +14,7 @@ display.set_caption("шутер")
 def show_menu():
     global menu_channel, game_channel
     game_channel.stop()
-    menu_channel.play(menu_music, loops =-1)
+    menu_channel.play(menu_music)
 def main():
     global menu_channel, game_channel
     menu_channel.stop()
@@ -113,9 +113,9 @@ def pause():
     btn.reset
 while game:
     if menu:
-        show_menu()
         window.blit(menubackground, (0, 0))
         btn.reset()
+        show_menu()
         for e in event.get():
             if e.type == QUIT:
                 game = False
@@ -151,6 +151,7 @@ while game:
             finish = True
             window.blit(text_victory, (200, 200))
         for monster in sprites_list2:
+            killed += 1
             enemy1 = Enemy("skorupi.png", 80, 80, randint(1, 4), randint(100, 620), 0)
             monsters.add(enemy1)
             if not player.is_parrying:
