@@ -40,8 +40,12 @@ class Player(GameSprite):
         keys_pressed = key.get_pressed()
         if keys_pressed[K_a] and self.rect.x > 0:
             self.rect.x -= self.speed
+        if keys_pressed[K_s] and self.rect.x > 0:
+            self.rect.x -= 20
         if keys_pressed[K_d] and self.rect.x < 700 - 65:
             self.rect.x += self.speed
+        if keys_pressed[K_w] and self.rect.x < 700 - 65:
+            self.rect.x += 20
         if self.is_parrying:
             self.parry_timer -= 1
             if self.parry_timer <= 0:
